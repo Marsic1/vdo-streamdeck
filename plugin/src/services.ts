@@ -71,23 +71,25 @@ async function testConnectionFromInspector(): Promise<void> {
 
 	try {
 		vdoClient.configure(settings);
-		if (isVdoConnected()) {
-			await sendInspectorStatus("connectionTestResult", true, "VDO.Ninja page answered.");
-			return;
-		}
-		try {
-			await vdoClient.sendCommand({ action: "getDetails" });
-			if (settings.httpFallback === false && !isVdoConnected()) {
-				await waitForConnectionResult((settings.requestTimeoutMs || 5000) + 1500, true);
+		let ok = false;
+		if (settings.httpFallback === false) {
+			const response = waitForFreshPageResponse((settings.requestTimeoutMs || 5000) + 1500);
+			// If the socket is still opening, its normal startup probe will send
+			// getDetails. Only a fresh page response counts as a successful test.
+			await vdoClient.sendCommand({ action: "getDetails" }).catch(() => undefined);
+			ok = await response;
+		} else {
+			try {
+				await vdoClient.sendCommand({ action: "getDetails" });
+				ok = isVdoConnected();
+			} catch {
+				ok = false;
 			}
-		} catch {
-			await waitForConnectionResult((settings.requestTimeoutMs || 5000) + 1500);
 		}
-		const ok = isVdoConnected();
 		await sendInspectorStatus(
 			"connectionTestResult",
 			ok,
-			ok ? "VDO.Ninja page answered." : statusMessage(vdoClient.connectionState)
+			ok ? "VDO.Ninja page answered." : isVdoConnected() ? "No fresh response from the VDO.Ninja page." : statusMessage(vdoClient.connectionState)
 		);
 	} catch (error) {
 		await sendInspectorStatus(
@@ -121,33 +123,17 @@ async function openUrlFromInspector(payload: JsonObject): Promise<void> {
 	}
 }
 
-function waitForConnectionResult(timeoutMs: number, waitForFreshPage = false): Promise<ConnectionStateName> {
-	const terminal = new Set<ConnectionStateName>(["connected", "no-page", "timeout", "error", "disconnected", "missing-key"]);
-	const shouldIgnore = (state: ConnectionStateName) => waitForFreshPage && (state === "no-page" || state === "timeout");
-	if (terminal.has(vdoClient.connectionState) && vdoClient.connectionState !== "disconnected" && !shouldIgnore(vdoClient.connectionState)) {
-		return Promise.resolve(vdoClient.connectionState);
-	}
-
+function waitForFreshPageResponse(timeoutMs: number): Promise<boolean> {
 	return new Promise(resolve => {
-		let settled = false;
-		let unsubscribe: () => void = () => undefined;
-		const timer = setTimeout(() => finish(vdoClient.connectionState === "connecting" ? "timeout" : vdoClient.connectionState), timeoutMs);
-
-		const finish = (state: ConnectionStateName) => {
-			if (settled) {
-				return;
-			}
-			settled = true;
+		const finish = (ok: boolean) => {
 			clearTimeout(timer);
-			unsubscribe();
-			resolve(state);
+			unsubscribeCallback();
+			unsubscribeUpdate();
+			resolve(ok);
 		};
-
-		unsubscribe = vdoClient.onState(state => {
-			if (terminal.has(state) && !shouldIgnore(state)) {
-				finish(state);
-			}
-		});
+		const unsubscribeCallback = vdoClient.onCallback(() => finish(true));
+		const unsubscribeUpdate = vdoClient.onUpdate(() => finish(true));
+		const timer = setTimeout(() => finish(false), timeoutMs);
 	});
 }
 

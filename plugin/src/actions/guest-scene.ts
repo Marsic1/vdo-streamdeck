@@ -1,4 +1,4 @@
-import { action, type KeyAction, type KeyDownEvent, SingletonAction, type WillAppearEvent } from "@elgato/streamdeck";
+import { action, type KeyAction, type KeyDownEvent, SingletonAction, type DidReceiveSettingsEvent, type WillAppearEvent } from "@elgato/streamdeck";
 import { buildGuestScenePayload } from "../api/command-registry.js";
 import { normalizeGuestSceneSettings } from "../api/settings.js";
 import type { GuestSceneSettings } from "../api/types.js";
@@ -18,6 +18,12 @@ export class GuestSceneAction extends SingletonAction<GuestSceneSettings> {
 	}
 
 	override async onWillAppear(ev: WillAppearEvent<GuestSceneSettings>): Promise<void> {
+		if (ev.action.isKey()) {
+			await this.render(ev.action, ev.payload.settings);
+		}
+	}
+
+	override async onDidReceiveSettings(ev: DidReceiveSettingsEvent<GuestSceneSettings>): Promise<void> {
 		if (ev.action.isKey()) {
 			await this.render(ev.action, ev.payload.settings);
 		}

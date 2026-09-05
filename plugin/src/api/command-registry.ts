@@ -15,6 +15,7 @@ export type LocalControlStateField = "muted" | "videoMuted" | "speakerMuted" | "
 export type LocalControlTrackField = "audioTrack" | "videoTrack";
 
 export type LocalControlDefinition = {
+	icon: string;
 	id: string;
 	label: string;
 	action: string;
@@ -28,6 +29,7 @@ export type LocalControlDefinition = {
 export type GuestCommandValueKind = "toggle" | "none" | "text" | "number";
 
 export type GuestCommandDefinition = {
+	icon: string;
 	id: string;
 	label: string;
 	action: string;
@@ -44,6 +46,7 @@ export type GuestCommandDefinition = {
 export const LOCAL_CONTROLS: Record<string, LocalControlDefinition> = {
 	mic: {
 		id: "mic",
+		icon: "mic",
 		label: "Mic",
 		action: "mic",
 		stateField: "muted",
@@ -51,6 +54,7 @@ export const LOCAL_CONTROLS: Record<string, LocalControlDefinition> = {
 	},
 	camera: {
 		id: "camera",
+		icon: "camera",
 		label: "Camera",
 		action: "camera",
 		stateField: "videoMuted",
@@ -58,6 +62,7 @@ export const LOCAL_CONTROLS: Record<string, LocalControlDefinition> = {
 	},
 	speaker: {
 		id: "speaker",
+		icon: "speaker",
 		label: "Speaker",
 		action: "speaker",
 		stateField: "speakerMuted",
@@ -65,6 +70,7 @@ export const LOCAL_CONTROLS: Record<string, LocalControlDefinition> = {
 	},
 	record: {
 		id: "record",
+		icon: "record",
 		label: "Record",
 		action: "record",
 		pressOnly: false,
@@ -72,24 +78,28 @@ export const LOCAL_CONTROLS: Record<string, LocalControlDefinition> = {
 	},
 	screenshare: {
 		id: "screenshare",
+		icon: "share",
 		label: "Share",
 		action: "togglescreenshare",
 		pressOnly: true
 	},
 	hand: {
 		id: "hand",
+		icon: "hand",
 		label: "Hand",
 		action: "togglehand",
 		pressOnly: true
 	},
 	keyframe: {
 		id: "keyframe",
+		icon: "keyframe",
 		label: "Keyframe",
 		action: "forceKeyframe",
 		pressOnly: true
 	},
 	reload: {
 		id: "reload",
+		icon: "reload",
 		label: "Reload",
 		action: "reload",
 		dangerous: true,
@@ -97,6 +107,7 @@ export const LOCAL_CONTROLS: Record<string, LocalControlDefinition> = {
 	},
 	hangup: {
 		id: "hangup",
+		icon: "hangup",
 		label: "Hang Up",
 		action: "hangup",
 		dangerous: true,
@@ -107,6 +118,7 @@ export const LOCAL_CONTROLS: Record<string, LocalControlDefinition> = {
 export const GUEST_COMMANDS: Record<string, GuestCommandDefinition> = {
 	mic: {
 		id: "mic",
+		icon: "mic",
 		label: "Guest Mic",
 		action: "mic",
 		valueKind: "toggle",
@@ -115,6 +127,7 @@ export const GUEST_COMMANDS: Record<string, GuestCommandDefinition> = {
 	},
 	camera: {
 		id: "camera",
+		icon: "camera",
 		label: "Guest Cam",
 		action: "camera",
 		valueKind: "toggle",
@@ -123,6 +136,7 @@ export const GUEST_COMMANDS: Record<string, GuestCommandDefinition> = {
 	},
 	speaker: {
 		id: "speaker",
+		icon: "speaker",
 		label: "Guest Speaker",
 		action: "speaker",
 		valueKind: "toggle",
@@ -131,12 +145,14 @@ export const GUEST_COMMANDS: Record<string, GuestCommandDefinition> = {
 	},
 	display: {
 		id: "display",
+		icon: "display",
 		label: "Guest Display",
 		action: "display",
 		valueKind: "toggle"
 	},
 	volume: {
 		id: "volume",
+		icon: "volume",
 		label: "Guest Volume",
 		action: "volume",
 		valueKind: "number",
@@ -144,6 +160,7 @@ export const GUEST_COMMANDS: Record<string, GuestCommandDefinition> = {
 	},
 	group: {
 		id: "group",
+		icon: "group",
 		label: "Guest Group",
 		action: "group",
 		valueKind: "text",
@@ -151,6 +168,7 @@ export const GUEST_COMMANDS: Record<string, GuestCommandDefinition> = {
 	},
 	forward: {
 		id: "forward",
+		icon: "transfer",
 		label: "Transfer",
 		action: "forward",
 		valueKind: "text",
@@ -159,6 +177,7 @@ export const GUEST_COMMANDS: Record<string, GuestCommandDefinition> = {
 	},
 	activateQueuedGuest: {
 		id: "activateQueuedGuest",
+		icon: "activate",
 		label: "Activate Guest",
 		action: "activateQueuedGuest",
 		valueKind: "none",
@@ -167,6 +186,7 @@ export const GUEST_COMMANDS: Record<string, GuestCommandDefinition> = {
 	},
 	hangup: {
 		id: "hangup",
+		icon: "hangup",
 		label: "Hang Up Guest",
 		action: "hangup",
 		valueKind: "none",
@@ -176,24 +196,28 @@ export const GUEST_COMMANDS: Record<string, GuestCommandDefinition> = {
 	},
 	soloVideo: {
 		id: "soloVideo",
+		icon: "solo",
 		label: "Solo Video",
 		action: "soloVideo",
 		valueKind: "toggle"
 	},
 	soloChat: {
 		id: "soloChat",
+		icon: "talk",
 		label: "Solo Talk",
 		action: "soloChat",
 		valueKind: "toggle"
 	},
 	soloChatBidirectional: {
 		id: "soloChatBidirectional",
+		icon: "talk",
 		label: "Two-way Talk",
 		action: "soloChatBidirectional",
 		valueKind: "toggle"
 	},
 	sendDirectorChat: {
 		id: "sendDirectorChat",
+		icon: "overlay",
 		label: "Overlay",
 		action: "sendDirectorChat",
 		valueKind: "text",
@@ -201,6 +225,7 @@ export const GUEST_COMMANDS: Record<string, GuestCommandDefinition> = {
 	},
 	sendPinnedDirectorChat: {
 		id: "sendPinnedDirectorChat",
+		icon: "pin",
 		label: "Pinned Overlay",
 		action: "sendPinnedDirectorChat",
 		valueKind: "text",
@@ -208,6 +233,7 @@ export const GUEST_COMMANDS: Record<string, GuestCommandDefinition> = {
 	},
 	forceKeyframe: {
 		id: "forceKeyframe",
+		icon: "keyframe",
 		label: "Guest Keyframe",
 		action: "forceKeyframe",
 		valueKind: "none",
@@ -216,6 +242,7 @@ export const GUEST_COMMANDS: Record<string, GuestCommandDefinition> = {
 	},
 	refreshVideo: {
 		id: "refreshVideo",
+		icon: "reload",
 		label: "Refresh Video",
 		action: "refreshVideo",
 		valueKind: "none",
@@ -224,6 +251,7 @@ export const GUEST_COMMANDS: Record<string, GuestCommandDefinition> = {
 	},
 	refreshConnection: {
 		id: "refreshConnection",
+		icon: "reload",
 		label: "Refresh Conn",
 		action: "refreshConnection",
 		valueKind: "none",
@@ -232,6 +260,7 @@ export const GUEST_COMMANDS: Record<string, GuestCommandDefinition> = {
 	},
 	recoverStream: {
 		id: "recoverStream",
+		icon: "reload",
 		label: "Recover",
 		action: "recoverStream",
 		valueKind: "none",

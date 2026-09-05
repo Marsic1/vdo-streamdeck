@@ -180,7 +180,7 @@ const child = spawn(
 					type: 7
 				}
 			],
-			plugin: { uuid: "ninja.vdo.streamdeck", version: "0.1.12.0" }
+			plugin: { uuid: "ninja.vdo.streamdeck", version: "0.1.13.0" }
 		}),
 	],
 	{
@@ -377,6 +377,24 @@ try {
 	assert.equal(apiSocketMessages.some(message => message.action === "ptzZoom"), false, "PTZ increments must use HTTP while WS is open");
 
 	assert.ok(apiSocketMessages.some(message => message.join === apiKey), "Plugin should still join the live update WebSocket");
+
+	// Inspector edits should repaint immediately even when no VDO state changes.
+	const recordSettings = { command: "record", behavior: "on" };
+	contextSettings.set("local-mic", recordSettings);
+	sendToPlugin({ event: "didReceiveSettings", action: "ninja.vdo.streamdeck.local-control", context: "local-mic", device: "runtime-device", payload: { settings: recordSettings } });
+	await waitFor(() => hasOutput("local-mic", "setImage", payload => payload.image === "imgs/command-record-neutral.png"), "record-specific key artwork");
+	await waitFor(() => hasOutput("local-mic", "setTitle", payload => payload.title === "Record"), "inspector command title refresh");
+	for (const message of streamDeckMessages.filter(message => message.event === "setImage")) {
+		assert.ok(existsSync(join(isolatedPluginRoot, message.payload.image)), "Every runtime-selected image must ship in the isolated bundle");
+	}
+
+	// Exercise the official SDK's minimal willDisappear ActionContext after PTT.
+	const heldSettings = { command: "mic", behavior: "pushToTalk" };
+	contextSettings.set("local-mic", heldSettings);
+	keyDown("ninja.vdo.streamdeck.local-control", "local-mic", heldSettings, 2);
+	await waitFor(() => apiState.localMuted === false, "push-to-talk press");
+	sendToPlugin({ event: "willDisappear", action: "ninja.vdo.streamdeck.local-control", context: "local-mic", device: "runtime-device", payload: { controller: "Keypad", settings: heldSettings } });
+	await waitFor(() => apiState.localMuted === true, "push-to-talk profile-switch release");
 	console.log("streamdeck bundled runtime integration passed: every action type, polling, keys, dials, persistence, readback, and transport");
 } catch (error) {
 	throw new Error(`${error instanceof Error ? error.message : String(error)}\nstdout:\n${stdout}\nstderr:\n${stderr}`);

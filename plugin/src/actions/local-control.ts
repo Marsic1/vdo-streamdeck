@@ -1,4 +1,5 @@
-import { action, type KeyAction, type KeyDownEvent, type KeyUpEvent, SingletonAction, type WillAppearEvent } from "@elgato/streamdeck";
+import { setCommandIcon } from "./command-icon.js";
+import { action, type KeyAction, type KeyDownEvent, type KeyUpEvent, SingletonAction, type DidReceiveSettingsEvent, type WillAppearEvent, type WillDisappearEvent } from "@elgato/streamdeck";
 import {
 	buildLocalControlPayload,
 	buildLocalMomentaryPayload,
@@ -15,6 +16,8 @@ export class LocalControlAction extends SingletonAction<LocalControlSettings> {
 	private armedUntil = new Map<string, number>();
 	private momentarySequence = new Map<string, number>();
 	private momentaryPressed = new Set<string>();
+	private momentarySettings = new Map<string, { settings: LocalControlSettings; action: KeyAction<LocalControlSettings> }>();
+	private momentaryRequests = new Map<string, Promise<void>>();
 
 	constructor() {
 		super();
@@ -27,6 +30,26 @@ export class LocalControlAction extends SingletonAction<LocalControlSettings> {
 		if (ev.action.isKey()) {
 			await this.render(ev.action, ev.payload.settings);
 		}
+	}
+
+	override async onDidReceiveSettings(ev: DidReceiveSettingsEvent<LocalControlSettings>): Promise<void> {
+		this.armedUntil.delete(ev.action.id);
+		if (ev.action.isKey()) {
+			const held = this.momentarySettings.get(ev.action.id);
+			const next = normalizeLocalControlSettings(ev.payload.settings);
+			if (held && (held.settings.command !== next.command || held.settings.behavior !== next.behavior)) {
+				await this.sendMomentary(ev.action, held.settings, "up");
+			}
+			await this.render(ev.action, ev.payload.settings);
+		}
+	}
+
+	override async onWillDisappear(ev: WillDisappearEvent<LocalControlSettings>): Promise<void> {
+		const held = this.momentarySettings.get(ev.action.id);
+		if (held) {
+			await this.sendMomentary(held.action, held.settings, "up", false);
+		}
+		this.armedUntil.delete(ev.action.id);
 	}
 
 	override async onKeyDown(ev: KeyDownEvent<LocalControlSettings>): Promise<void> {
@@ -68,6 +91,11 @@ export class LocalControlAction extends SingletonAction<LocalControlSettings> {
 	}
 
 	override async onKeyUp(ev: KeyUpEvent<LocalControlSettings>): Promise<void> {
+		const held = this.momentarySettings.get(ev.action.id);
+		if (held) {
+			await this.sendMomentary(ev.action, held.settings, "up");
+			return;
+		}
 		const settings = normalizeLocalControlSettings(ev.payload.settings);
 		const definition = getLocalControlDefinition(settings.command);
 		if (this.isTrackInactive(definition)) {
@@ -91,6 +119,7 @@ export class LocalControlAction extends SingletonAction<LocalControlSettings> {
 	private async render(actionContext: KeyAction<LocalControlSettings>, rawSettings?: LocalControlSettings): Promise<void> {
 		const settings = normalizeLocalControlSettings(rawSettings || (await actionContext.getSettings<LocalControlSettings>()));
 		const definition = getLocalControlDefinition(settings.command);
+		await setCommandIcon(actionContext, definition.icon, !definition.stateField);
 		const label = settings.title || definition.label;
 		if (this.isTrackInactive(definition)) {
 			await actionContext.setState(0);
@@ -115,24 +144,38 @@ export class LocalControlAction extends SingletonAction<LocalControlSettings> {
 		}
 	}
 
-	private async sendMomentary(actionContext: KeyAction<LocalControlSettings>, settings: LocalControlSettings, phase: "down" | "up"): Promise<void> {
+	private async sendMomentary(actionContext: KeyAction<LocalControlSettings>, settings: LocalControlSettings, phase: "down" | "up", render = true): Promise<void> {
 		const sequence = this.nextMomentarySequence(actionContext.id);
 		if (phase === "down") {
 			this.momentaryPressed.add(actionContext.id);
+			this.momentarySettings.set(actionContext.id, { settings, action: actionContext });
 		} else {
 			this.momentaryPressed.delete(actionContext.id);
+			this.momentarySettings.delete(actionContext.id);
 		}
 
-		try {
+		// HTTP requests can complete out of order. Keep each key's press/release
+		// commands ordered so a late press cannot leave the microphone live.
+		const previous = this.momentaryRequests.get(actionContext.id) || Promise.resolve();
+		const request = previous.catch(() => undefined).then(async () => {
 			const payload = buildLocalMomentaryPayload(settings, phase);
 			await vdoClient.sendCommand(payload, { awaitCallback: false });
+		});
+		this.momentaryRequests.set(actionContext.id, request);
+		try {
+			await request;
 		} catch {
 			if (this.isCurrentMomentarySequence(actionContext.id, sequence)) {
+				this.momentaryPressed.delete(actionContext.id);
 				await actionContext.showAlert();
+			}
+		} finally {
+			if (this.momentaryRequests.get(actionContext.id) === request) {
+				this.momentaryRequests.delete(actionContext.id);
 			}
 		}
 
-		if (this.isCurrentMomentarySequence(actionContext.id, sequence)) {
+		if (render && this.isCurrentMomentarySequence(actionContext.id, sequence)) {
 			await this.render(actionContext, settings);
 		}
 	}

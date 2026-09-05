@@ -1,6 +1,8 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { GUEST_COMMANDS, LOCAL_CONTROLS } from "./api/command-registry.js";
+import { MIXER_ICONS, PTZ_ICONS } from "./actions/command-icon.js";
 
 /**
  * Stream Deck resolves manifest image paths without an extension, so a typo or
@@ -24,6 +26,11 @@ const pluginRoot = join(import.meta.dirname, "..");
 const manifest = JSON.parse(readFileSync(join(pluginRoot, "manifest.json"), "utf8")) as Manifest;
 
 const referenced = new Set<string>([
+	...Array.from(new Set([
+		...Object.values(LOCAL_CONTROLS).map(command => command.icon),
+		...Object.values(GUEST_COMMANDS).map(command => command.icon),
+		...Object.values(MIXER_ICONS), ...Object.values(PTZ_ICONS)
+	])).flatMap(icon => ["on", "off", "neutral"].map(state => `imgs/command-${icon}-${state}`)),
 	manifest.Icon,
 	manifest.CategoryIcon,
 	...manifest.Actions.flatMap(action => [

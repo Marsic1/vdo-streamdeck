@@ -1,11 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 144 144">
   <rect x="0" y="0" width="144" height="144" fill="#0f6b41"/>
-  <line x1="36.75" y1="54.75" x2="107.25" y2="54.75" stroke="#0b1118" stroke-width="6.75" stroke-linecap="round" opacity="0.24"/>
-  <line x1="36.75" y1="75" x2="107.25" y2="75" stroke="#0b1118" stroke-width="6.75" stroke-linecap="round" opacity="0.24"/>
-  <line x1="36.75" y1="95.25" x2="107.25" y2="95.25" stroke="#0b1118" stroke-width="6.75" stroke-linecap="round" opacity="0.24"/>
-  <rect x="81.75" y="44.25" width="12.75" height="21" rx="5.625" fill="#0b1118" opacity="0.24"/>
-  <rect x="50.25" y="64.5" width="12.75" height="21" rx="5.625" fill="#0b1118" opacity="0.24"/>
-  <rect x="73.5" y="84.75" width="12.75" height="21" rx="5.625" fill="#0b1118" opacity="0.24"/>
+  <line x1="16.983" y1="22.65" x2="53.017" y2="22.65" stroke="#ffffff" stroke-width="3.45" stroke-linecap="round"/>
+  <line x1="16.983" y1="33" x2="53.017" y2="33" stroke="#ffffff" stroke-width="3.45" stroke-linecap="round"/>
+  <line x1="16.983" y1="43.35" x2="53.017" y2="43.35" stroke="#ffffff" stroke-width="3.45" stroke-linecap="round"/>
+  <rect x="39.983" y="17.283" width="6.517" height="10.733" rx="2.875" fill="#ffffff"/>
+  <rect x="23.883" y="27.633" width="6.517" height="10.733" rx="2.875" fill="#ffffff"/>
+  <rect x="35.767" y="37.983" width="6.517" height="10.733" rx="2.875" fill="#ffffff"/>
   <circle cx="108" cy="33" r="23" fill="#35d07f"/>
   <rect x="96.6" y="21.6" width="8.6" height="8.6" rx="2.4" fill="#06301d"/>
   <rect x="110.8" y="21.6" width="8.6" height="8.6" rx="2.4" fill="#06301d"/>

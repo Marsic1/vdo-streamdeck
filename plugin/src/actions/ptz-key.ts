@@ -1,4 +1,5 @@
-import { action, type KeyAction, type KeyDownEvent, SingletonAction, type WillAppearEvent } from "@elgato/streamdeck";
+import { setCommandIcon, PTZ_ICONS } from "./command-icon.js";
+import { action, type KeyAction, type KeyDownEvent, SingletonAction, type DidReceiveSettingsEvent, type WillAppearEvent } from "@elgato/streamdeck";
 import { buildPtzKeyPayloads } from "../api/command-registry.js";
 import { normalizePtzKeySettings } from "../api/settings.js";
 import type { PtzKeySettings } from "../api/types.js";
@@ -18,6 +19,12 @@ export class PtzKeyAction extends SingletonAction<PtzKeySettings> {
 	}
 
 	override async onWillAppear(ev: WillAppearEvent<PtzKeySettings>): Promise<void> {
+		if (ev.action.isKey()) {
+			await this.render(ev.action, ev.payload.settings);
+		}
+	}
+
+	override async onDidReceiveSettings(ev: DidReceiveSettingsEvent<PtzKeySettings>): Promise<void> {
 		if (ev.action.isKey()) {
 			await this.render(ev.action, ev.payload.settings);
 		}
@@ -60,6 +67,7 @@ export class PtzKeyAction extends SingletonAction<PtzKeySettings> {
 
 	private async render(actionContext: KeyAction<PtzKeySettings>, rawSettings?: PtzKeySettings): Promise<void> {
 		const settings = normalizePtzKeySettings(rawSettings || (await actionContext.getSettings<PtzKeySettings>()));
+		await setCommandIcon(actionContext, PTZ_ICONS[settings.control || "zoom"] || "zoom", true);
 		const label = ptzLabel(settings);
 		if (settings.scope === "guest") {
 			const choice = resolveGuestTargetChoice(settings);

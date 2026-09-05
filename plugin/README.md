@@ -73,6 +73,12 @@ All artwork is generated from one spec by `npm run assets`, so the vector and ra
 
 Edit the spec, not the output. Keypad state images keep their glyph in a corner badge so the two-line title the plugin draws stays legible. `src/manifest-assets.test.ts` fails the build if the manifest references an image that does not exist, if a raster image is the wrong size, or if a generated image is never referenced.
 
+Local and guest commands now select their own microphone, camera, record, speaker, share, transfer, activation, and other glyphs from the command registry. PTZ keys distinguish zoom, pan, tilt, focus, and exposure; mixer keys distinguish layout, slot, mute, and transfer. The symbol sits above the title alongside a separate state badge. Commands without an observed on/off state use neutral artwork. Stream Deck continues to honor user-supplied custom images.
+
+Inspector edits refresh key titles and artwork immediately, including while disconnected. Test connection requires a fresh page response. Momentary mic commands preserve press/release order and release when the key disappears or its behavior changes.
+
+See the [illustrative icon preview](../docs/assets/command-icons-preview.png). It demonstrates title spacing and artwork, rather than reproducing live state from Stream Deck.
+
 ## Runtime alignment
 
 ### VDO.Ninja state

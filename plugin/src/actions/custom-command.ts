@@ -1,4 +1,4 @@
-import { action, type KeyDownEvent, SingletonAction, type WillAppearEvent } from "@elgato/streamdeck";
+import { action, type KeyDownEvent, SingletonAction, type DidReceiveSettingsEvent, type WillAppearEvent } from "@elgato/streamdeck";
 import type { JsonValue } from "@elgato/utils";
 import { normalizeCustomCommandSettings } from "../api/settings.js";
 import type { CustomCommandSettings, VdoCommandPayload } from "../api/types.js";
@@ -7,6 +7,11 @@ import { vdoClient } from "../services.js";
 @action({ UUID: "ninja.vdo.streamdeck.custom-command" })
 export class CustomCommandAction extends SingletonAction<CustomCommandSettings> {
 	override async onWillAppear(ev: WillAppearEvent<CustomCommandSettings>): Promise<void> {
+		const settings = normalizeCustomCommandSettings(ev.payload.settings);
+		await ev.action.setTitle(settings.title || `VDO\n${settings.action || "Command"}`);
+	}
+
+	override async onDidReceiveSettings(ev: DidReceiveSettingsEvent<CustomCommandSettings>): Promise<void> {
 		const settings = normalizeCustomCommandSettings(ev.payload.settings);
 		await ev.action.setTitle(settings.title || `VDO\n${settings.action || "Command"}`);
 	}

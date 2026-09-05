@@ -323,3 +323,40 @@ export const ACTION_ICONS = {
 		]
 	}
 };
+
+// Command glyphs use the same 24-unit grid as the action-list artwork.
+// These stay above the title, so a white label never obscures the symbol.
+const line = (x1, y1, x2, y2) => ({ type: "line", x1, y1, x2, y2, width: 2, cap: "round", fill: glyph });
+const rect = (x, y, w, h, r = 1) => ({ type: "rect", x, y, w, h, r, fill: glyph });
+const ring = (cx, cy, r) => ({ type: "ring", cx, cy, r, width: 2, fill: glyph });
+const polygon = points => ({ type: "polygon", points, fill: glyph });
+const icon = (...shapes) => ({ size: 24, shapes });
+export const COMMAND_ICONS = {
+	mic: ACTION_ICONS.local,
+	camera: ACTION_ICONS.category,
+	speaker: icon(polygon([[3,9],[7,9],[12,5],[12,19],[7,15],[3,15]]),
+		{ type: "arc", cx: 11, cy: 12, r: 6, width: 2, from: 310, to: 410, fill: glyph },
+		{ type: "arc", cx: 11, cy: 12, r: 10, width: 2, from: 315, to: 405, fill: glyph }),
+	record: icon(ring(12,12,9), { type: "circle", cx: 12, cy: 12, r: 5, fill: glyph }),
+	display: icon(line(3,4,21,4),line(3,4,3,17),line(21,4,21,17),line(3,17,21,17),line(12,17,12,21),line(8,21,16,21)),
+	share: icon(line(3,7,3,19),line(3,19,21,19),line(21,19,21,7),line(12,14,12,3),polygon([[7,8],[12,2],[17,8]])),
+	hand: icon(rect(7,9,12,12,5),rect(7,4,2.5,11),rect(10.3,2,2.5,12),rect(13.6,3,2.5,11),rect(17,6,2,10),line(8,17,3,11)),
+	keyframe: icon(line(3,4,21,4),line(3,4,3,20),line(21,4,21,20),line(3,20,21,20),polygon([[9,7],[17,12],[9,17]])),
+	reload: icon({type:"arc",cx:12,cy:12,r:8,width:2.4,from:30,to:315,fill:glyph},polygon([[19,3],[21,11],[13,8]])),
+	hangup: icon({type:"arc",cx:12,cy:15,r:8,width:4,from:205,to:335,cap:"round",fill:glyph},rect(2,12,5,5,2),rect(17,12,5,5,2)),
+	group: icon({type:"circle",cx:8,cy:7,r:3,fill:glyph},{type:"circle",cx:17,cy:8,r:2.5,fill:glyph},rect(2,12,12,9,4),rect(15,13,7,8,3)),
+	transfer: icon(line(3,4,10,4),line(3,4,3,20),line(3,20,10,20),line(8,12,21,12),line(16,7,21,12),line(16,17,21,12)),
+	activate: icon({type:"circle",cx:8,cy:7,r:3.5,fill:glyph},rect(2,13,11,9,4),line(14,12,17,15),line(17,15,22,8)),
+	solo: icon(line(2,3,8,3),line(2,3,2,9),line(16,3,22,3),line(22,3,22,9),line(2,15,2,21),line(2,21,8,21),line(16,21,22,21),line(22,15,22,21),{type:"circle",cx:12,cy:9,r:3,fill:glyph},rect(7,14,10,5,2)),
+	talk: icon(line(3,4,21,4),line(3,4,3,16),line(21,4,21,16),line(8,16,21,16),line(3,21,8,16),line(3,16,3,21),line(7,9,17,9)),
+	overlay: icon(rect(2,5,20,14,2),{type:"rect",x:4,y:7,w:16,h:7,fill:colors.slateGlyph}),
+	pin: icon(rect(7,2,10,3),polygon([[9,5],[15,5],[16,12],[19,15],[5,15],[8,12]]),line(12,15,12,22)),
+	zoom: icon(ring(10,10,6),line(15,15,22,22),line(7,10,13,10),line(10,7,10,13)),
+	pan: icon(line(2,12,22,12),line(2,12,7,7),line(2,12,7,17),line(22,12,17,7),line(22,12,17,17)),
+	tilt: icon(line(12,2,12,22),line(12,2,7,7),line(12,2,17,7),line(12,22,7,17),line(12,22,17,17)),
+	focus: icon(ring(12,12,6),line(2,3,7,3),line(2,3,2,8),line(17,3,22,3),line(22,3,22,8),line(2,16,2,21),line(2,21,7,21),line(17,21,22,21),line(22,16,22,21)),
+	exposure: icon(ring(12,12,5),...Array.from({length:8},(_,i)=>{const a=i*Math.PI/4;return line(12+8*Math.cos(a),12+8*Math.sin(a),12+10*Math.cos(a),12+10*Math.sin(a));})),
+	layout: ACTION_ICONS.scene,
+	slot: icon(...[3,14].flatMap(x=>[3,14].map(y=>rect(x,y,7,7)))),
+	volume: ACTION_ICONS.mixer
+};

@@ -13,6 +13,7 @@ export class VdoClient {
 	private reconnectAttempt = 0;
 	private sentTimestamps: number[] = [];
 	private skippedRealtimeCommands = 0;
+	private connectionGeneration = 0;
 	private listeners = {
 		state: new Set<Listener<ConnectionStateName>>(),
 		callback: new Set<Listener<VdoCallback>>(),
@@ -61,6 +62,9 @@ export class VdoClient {
 			next.useTls !== this.settings.useTls;
 
 		this.settings = next;
+		if (changed) {
+			this.connectionGeneration += 1;
+		}
 
 		if (!next.apiKey) {
 			this.disconnect("missing-key");
@@ -95,9 +99,9 @@ export class VdoClient {
 		this.socket.on("open", () => {
 			this.reconnectAttempt = 0;
 			this.sendRaw({ join: this.settings.apiKey || "" });
-			void this.sendCommand({ action: "getDetails" }).catch(() => {
-				this.setState("no-page");
-			});
+			// HTTP failures already report their specific state. A late failure
+			// from a previous connection must not overwrite the current state.
+			void this.sendCommand({ action: "getDetails" }).catch(() => undefined);
 		});
 
 		this.socket.on("message", data => {
@@ -117,6 +121,7 @@ export class VdoClient {
 	}
 
 	disconnect(state: ConnectionStateName = "disconnected"): void {
+		this.connectionGeneration += 1;
 		this.clearReconnect();
 		this.closeSocket();
 		this.setState(state);
@@ -125,6 +130,7 @@ export class VdoClient {
 	async sendCommand(payload: VdoCommandPayload, options: { awaitCallback?: boolean } = {}): Promise<VdoCallback> {
 		const awaitCallback = options.awaitCallback !== false;
 		const request = { ...payload };
+		const generation = this.connectionGeneration;
 
 		if (!awaitCallback) {
 			// Prefer the request/response HTTP route whenever the command fits it.
@@ -133,6 +139,7 @@ export class VdoClient {
 			// is not sufficient proof that a realtime dial command was delivered.
 			if (this.shouldUseHttp(request)) {
 				const callback = await this.sendHttp(request);
+				this.assertCurrentConnection(generation);
 				this.handleCallback(callback);
 				return callback;
 			}
@@ -149,6 +156,7 @@ export class VdoClient {
 
 		if (this.shouldUseHttp(request)) {
 			const callback = await this.sendHttp(request);
+			this.assertCurrentConnection(generation);
 			this.handleCallback(callback);
 			return callback;
 		}
@@ -164,6 +172,7 @@ export class VdoClient {
 	}
 
 	private async sendHttp(payload: VdoCommandPayload): Promise<VdoCallback> {
+		const generation = this.connectionGeneration;
 		if (!this.settings.apiKey) {
 			throw new Error("Missing VDO.Ninja API key");
 		}
@@ -176,6 +185,7 @@ export class VdoClient {
 			response = await fetch(this.buildHttpUrl(protocol, payload), { signal: controller.signal });
 			text = await response.text();
 		} catch (error) {
+			this.assertCurrentConnection(generation);
 			if (controller.signal.aborted) {
 				this.setState("timeout");
 				throw new Error(`Timed out waiting for ${payload.action} HTTP response`);
@@ -185,6 +195,7 @@ export class VdoClient {
 		} finally {
 			clearTimeout(timeout);
 		}
+		this.assertCurrentConnection(generation);
 		const trimmed = text.trim();
 		if (!response.ok) {
 			this.setState("error");
@@ -264,16 +275,19 @@ export class VdoClient {
 			return;
 		}
 
-		if (message.msg && typeof message.msg === "object") {
+		if (!isJsonObject(message)) {
+			return;
+		}
+		if (isJsonObject(message.msg)) {
 			message = message.msg as VdoClientMessage;
 		}
 
 		this.emit("message", message);
 
-		if (message.callback) {
+		if (isJsonObject(message.callback)) {
 			this.handleCallback(message.callback);
 		}
-		if (message.update) {
+		if (isJsonObject(message.update)) {
 			this.setState("connected");
 			this.emit("update", message.update);
 		}
@@ -282,6 +296,12 @@ export class VdoClient {
 	private handleCallback(callback: VdoCallback): void {
 		this.setState("connected");
 		this.emit("callback", callback);
+	}
+
+	private assertCurrentConnection(generation: number): void {
+		if (generation !== this.connectionGeneration) {
+			throw new Error("VDO.Ninja API connection changed during request");
+		}
 	}
 
 	private isSocketOpen(): boolean {
@@ -391,6 +411,10 @@ function isRealtimeAction(action: string): boolean {
 
 function hasOwn(object: JsonObject, key: string): boolean {
 	return Object.prototype.hasOwnProperty.call(object, key);
+}
+
+function isJsonObject(value: unknown): value is JsonObject {
+	return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
 function valueToPathSegment(value: JsonValue): string {

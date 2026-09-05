@@ -47,6 +47,9 @@ jobs:
             - name: Build plugin
               run: npm run build
 
+            - name: Test bundled runtime
+              run: npm run test:runtime
+
             - name: Validate plugin
               run: npx --yes @elgato/cli@1.7.4 validate ninja.vdo.streamdeck.sdPlugin --no-update-check
 

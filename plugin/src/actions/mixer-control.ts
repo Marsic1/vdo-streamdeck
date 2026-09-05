@@ -1,4 +1,5 @@
-import { action, type KeyAction, type KeyDownEvent, SingletonAction, type WillAppearEvent } from "@elgato/streamdeck";
+import { setCommandIcon, MIXER_ICONS } from "./command-icon.js";
+import { action, type KeyAction, type KeyDownEvent, SingletonAction, type DidReceiveSettingsEvent, type WillAppearEvent, type WillDisappearEvent } from "@elgato/streamdeck";
 import { buildMixerControlPayloads } from "../api/command-registry.js";
 import { normalizeMixerControlSettings } from "../api/settings.js";
 import type { MixerControlSettings, StreamChoice, StreamState } from "../api/types.js";
@@ -23,6 +24,17 @@ export class MixerControlAction extends SingletonAction<MixerControlSettings> {
 		if (ev.action.isKey()) {
 			await this.render(ev.action, ev.payload.settings);
 		}
+	}
+
+	override async onDidReceiveSettings(ev: DidReceiveSettingsEvent<MixerControlSettings>): Promise<void> {
+		this.armedUntil.delete(ev.action.id);
+		if (ev.action.isKey()) {
+			await this.render(ev.action, ev.payload.settings);
+		}
+	}
+
+	override async onWillDisappear(ev: WillDisappearEvent<MixerControlSettings>): Promise<void> {
+		this.armedUntil.delete(ev.action.id);
 	}
 
 	override async onKeyDown(ev: KeyDownEvent<MixerControlSettings>): Promise<void> {
@@ -75,6 +87,7 @@ export class MixerControlAction extends SingletonAction<MixerControlSettings> {
 
 	private async render(actionContext: KeyAction<MixerControlSettings>, rawSettings?: MixerControlSettings): Promise<void> {
 		const settings = normalizeMixerControlSettings(rawSettings || (await actionContext.getSettings<MixerControlSettings>()));
+		await setCommandIcon(actionContext, MIXER_ICONS[settings.command || "layout"] || "layout", true);
 		const command = settings.command || "layout";
 		let title = settings.title || defaultTitle(settings);
 		let active = false;

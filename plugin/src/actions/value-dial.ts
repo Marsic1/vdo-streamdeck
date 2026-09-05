@@ -120,13 +120,17 @@ export class ValueDialAction extends SingletonAction<ValueDialSettings> {
 
 		const actionContext = pending.action;
 		const settings = normalizeValueDialSettings(await actionContext.getSettings<ValueDialSettings>());
-		const value = clampValueDialNumber(pending.value, settings);
+		if (this.pending.get(actionId) !== pending) {
+			return;
+		}
+		const requestedValue = pending.value;
+		const value = clampValueDialNumber(requestedValue, settings);
 
 		try {
-			await this.sendValue(actionContext, settings, value);
+			await this.sendValue(actionContext, settings, value, () => this.pending.get(actionId) === pending);
 		} finally {
 			pending.sending = false;
-			if (this.pending.get(actionId) === pending && pending.value === value) {
+			if (this.pending.get(actionId) === pending && pending.value === requestedValue) {
 				this.pending.delete(actionId);
 			} else if (this.pending.get(actionId) === pending) {
 				this.scheduleFlush(actionId, settings.intervalMs || 100);
@@ -137,6 +141,7 @@ export class ValueDialAction extends SingletonAction<ValueDialSettings> {
 	private async handlePush(actionContext: DialAction<ValueDialSettings>, rawSettings?: ValueDialSettings): Promise<void> {
 		const settings = normalizeValueDialSettings(rawSettings || (await actionContext.getSettings<ValueDialSettings>()));
 		if (settings.pushAction === "cycleControl") {
+			this.clearPending(actionContext.id);
 			// A queued value from the previous control must not be written over
 			// the new control's defaults after the swap.
 			this.clearPersist(actionContext.id);
@@ -161,10 +166,12 @@ export class ValueDialAction extends SingletonAction<ValueDialSettings> {
 		}
 
 		const resetValue = clampValueDialNumber(finiteNumber(settings.resetValue, finiteNumber(defaultResetValue(settings.control || "volume"), 0)), settings);
+		this.clearPending(actionContext.id);
+		this.clearPersist(actionContext.id);
 		await this.sendValue(actionContext, settings, resetValue);
 	}
 
-	private async sendValue(actionContext: DialAction<ValueDialSettings>, settings: ValueDialSettings, value: number): Promise<void> {
+	private async sendValue(actionContext: DialAction<ValueDialSettings>, settings: ValueDialSettings, value: number, isCurrent = () => true): Promise<void> {
 		const target = settings.scope === "guest" ? resolveGuestTargetValue(settings) : undefined;
 		if (settings.scope === "guest" && (typeof target === "undefined" || target === "")) {
 			await actionContext.showAlert();
@@ -175,9 +182,15 @@ export class ValueDialAction extends SingletonAction<ValueDialSettings> {
 		try {
 			const payload = buildValueDialPayload(settings, value, target);
 			await vdoClient.sendCommand(payload, { awaitCallback: false });
+			if (!isCurrent()) {
+				return;
+			}
 			this.schedulePersist(actionContext, value);
 			await this.render(actionContext, settings, value);
 		} catch {
+			if (!isCurrent()) {
+				return;
+			}
 			await actionContext.showAlert();
 			await this.render(actionContext, settings);
 		}

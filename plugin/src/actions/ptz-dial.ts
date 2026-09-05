@@ -108,6 +108,9 @@ export class PtzDialAction extends SingletonAction<PtzDialSettings> {
 
 		const actionContext = pending.action;
 		const settings = normalizePtzDialSettings(await actionContext.getSettings<PtzDialSettings>());
+		if (this.pending.get(actionId) !== pending) {
+			return;
+		}
 		const target = settings.scope === "guest" ? resolveGuestTargetValue(settings) : undefined;
 
 		if (settings.scope === "guest" && (typeof target === "undefined" || target === "")) {
@@ -123,12 +126,19 @@ export class PtzDialAction extends SingletonAction<PtzDialSettings> {
 		try {
 			const payloads = buildPtzDialPayloads(settings, ticks, target);
 			for (const payload of payloads) {
+				if (this.pending.get(actionId) !== pending) {
+					return;
+				}
 				await vdoClient.sendCommand(payload, { awaitCallback: false });
 			}
-			await this.render(actionContext, settings, tickStatus(ticks, settings));
+			if (this.pending.get(actionId) === pending) {
+				await this.render(actionContext, settings, tickStatus(ticks, settings));
+			}
 		} catch {
-			await actionContext.showAlert();
-			await this.render(actionContext, settings, "Blocked");
+			if (this.pending.get(actionId) === pending) {
+				await actionContext.showAlert();
+				await this.render(actionContext, settings, "Blocked");
+			}
 		} finally {
 			pending.sending = false;
 			if (pending.ticks) {
@@ -140,6 +150,7 @@ export class PtzDialAction extends SingletonAction<PtzDialSettings> {
 	private async handlePush(actionContext: DialAction<PtzDialSettings>, rawSettings?: PtzDialSettings): Promise<void> {
 		const settings = normalizePtzDialSettings(rawSettings || (await actionContext.getSettings<PtzDialSettings>()));
 		if (settings.pushAction === "cycleControl") {
+			this.clearPending(actionContext.id);
 			const nextSettings = {
 				...settings,
 				control: nextControl(settings)

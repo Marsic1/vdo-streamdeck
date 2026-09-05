@@ -1,4 +1,5 @@
-import { action, type KeyAction, type KeyDownEvent, SingletonAction, type WillAppearEvent } from "@elgato/streamdeck";
+import { setCommandIcon } from "./command-icon.js";
+import { action, type KeyAction, type KeyDownEvent, SingletonAction, type DidReceiveSettingsEvent, type WillAppearEvent, type WillDisappearEvent } from "@elgato/streamdeck";
 import { buildGuestCommandPayload, getGuestCommandDefinition } from "../api/command-registry.js";
 import { normalizeGuestCommandSettings } from "../api/settings.js";
 import type { GuestCommandSettings, StreamState } from "../api/types.js";
@@ -15,6 +16,7 @@ export class GuestCommandAction extends SingletonAction<GuestCommandSettings> {
 			void this.refreshVisible();
 		});
 		selectedTargetStore.subscribe(() => {
+			this.armedUntil.clear();
 			void this.refreshVisible();
 		});
 	}
@@ -23,6 +25,17 @@ export class GuestCommandAction extends SingletonAction<GuestCommandSettings> {
 		if (ev.action.isKey()) {
 			await this.render(ev.action, ev.payload.settings);
 		}
+	}
+
+	override async onDidReceiveSettings(ev: DidReceiveSettingsEvent<GuestCommandSettings>): Promise<void> {
+		this.armedUntil.delete(ev.action.id);
+		if (ev.action.isKey()) {
+			await this.render(ev.action, ev.payload.settings);
+		}
+	}
+
+	override async onWillDisappear(ev: WillDisappearEvent<GuestCommandSettings>): Promise<void> {
+		this.armedUntil.delete(ev.action.id);
 	}
 
 	override async onKeyDown(ev: KeyDownEvent<GuestCommandSettings>): Promise<void> {
@@ -75,6 +88,7 @@ export class GuestCommandAction extends SingletonAction<GuestCommandSettings> {
 	private async render(actionContext: KeyAction<GuestCommandSettings>, rawSettings?: GuestCommandSettings): Promise<void> {
 		const settings = normalizeGuestCommandSettings(rawSettings || (await actionContext.getSettings<GuestCommandSettings>()));
 		const definition = getGuestCommandDefinition(settings.command);
+		await setCommandIcon(actionContext, definition.icon, !definition.stateField);
 		const choice = resolveGuestTargetChoice(settings);
 		const stream = choice ? sessionStore.getStream(choice.streamID) : undefined;
 		const active = this.resolveActive(definition.id, stream);

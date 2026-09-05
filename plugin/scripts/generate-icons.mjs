@@ -14,7 +14,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { deflateSync } from "node:zlib";
-import { ACTION_ICONS, KEY_ICONS } from "./icon-set.mjs";
+import { ACTION_ICONS, COMMAND_ICONS, KEY_ICONS } from "./icon-set.mjs";
 
 /** Sub-samples per axis for pixels that straddle a shape edge. */
 const SAMPLES = 8;
@@ -65,6 +65,18 @@ for (const [actionName, variants] of Object.entries(keyBackgroundVariants)) {
 
 for (const [name, icon] of Object.entries(ACTION_ICONS)) {
 	await write(join(actionIconDir, `${name}.svg`), renderSvg(icon));
+}
+
+for (const [name, glyph] of Object.entries(COMMAND_ICONS)) {
+	for (const state of ["on", "off", "neutral"]) {
+		const base = KEY_ICONS[`state-${state}`];
+		const [field, ...foreground] = base.shapes;
+		const icon = { ...base, shapes: [field, ...backgroundGlyph(glyph, base.size), ...foreground] };
+		await write(join(imageDir, `command-${name}-${state}.svg`), renderSvg(icon));
+		for (const [index, width] of icon.raster.entries()) {
+			await write(join(imageDir, `command-${name}-${state}${index ? "@2x" : ""}.png`), renderPng(icon, width));
+		}
+	}
 }
 
 console.log(`Generated ${written} icon files in imgs/.`);
@@ -149,15 +161,15 @@ function renderPng(icon, size) {
 }
 
 function backgroundGlyph(icon, keySize) {
-	const size = 90;
+	const size = 46;
 	const scale = size / icon.size;
-	const offsetX = (keySize - size) / 2;
-	const offsetY = 30;
+	const offsetX = 12;
+	const offsetY = 10;
 	return icon.shapes.map(shape => transformShape(shape, scale, offsetX, offsetY));
 }
 
 function transformShape(shape, scale, offsetX, offsetY) {
-	const transformed = { ...shape, fill: "#0b1118", opacity: 0.24 };
+	const transformed = { ...shape };
 	for (const key of ["x", "x1", "x2", "cx"]) {
 		if (typeof shape[key] === "number") transformed[key] = shape[key] * scale + offsetX;
 	}
