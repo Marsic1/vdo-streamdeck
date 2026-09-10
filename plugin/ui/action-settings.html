@@ -653,8 +653,8 @@
     <input id="currentSelectedTarget" type="text" readonly>
 
     <label for="selectTitle">Title template</label>
-    <textarea id="selectTitle" rows="2" spellcheck="false" placeholder="{slot} {label} {streamID} {state}"></textarea>
-    <div class="hint">Guest Command and Guest Scene actions can use target mode <code>Selected guest</code>. Tokens: <code>{slot}</code> <code>{label}</code> <code>{streamID}</code> <code>{mode}</code> <code>{state}</code> Newlines render as line breaks on the key.</div>
+    <textarea id="selectTitle" rows="4" spellcheck="false" placeholder="{slot} {label} {streamID} {state}"></textarea>
+    <div class="hint">Guest Command and Guest Scene actions can use target mode <code>Selected guest</code>. Tokens: <code>{slot}</code> <code>{label}</code> <code>{streamID}</code> <code>{mode}</code> <code>{state}</code> Press Enter for a new line. Newlines render as line breaks on the key.</div>
   </section>
 
   <section id="guestSceneSettings" class="hidden">
@@ -1596,7 +1596,7 @@
           mode: byId("selectMode").value,
           targetMode,
           target: targetMode === "slot" ? byId("selectSlot").value.trim() || "1" : targetMode === "streamId" ? manualStream || byId("selectStreamId").value : "",
-          title: byId("selectTitle").value.trim()
+          title: byId("selectTitle").value
         };
         renderSelectGuestSettings();
       } else if (actionUuid === "ninja.vdo.streamdeck.guest-command") {

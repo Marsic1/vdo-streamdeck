@@ -25,4 +25,9 @@ describe("guest selection cycling", () => {
 		const settings = normalizeSelectGuestSettings({ mode: "fixed", title: "{slot}\n{label}" });
 		expect(renderSelectTitle(settings, choices[0], "guest-a", true)).toBe("1\nGuest A");
 	});
+
+	it("supports three-line custom titles", () => {
+		const settings = normalizeSelectGuestSettings({ mode: "fixed", title: "{slot}\n{label}\n{state}" });
+		expect(renderSelectTitle(settings, choices[0], "guest-a", true)).toBe("1\nGuest A\nSelected");
+	});
 });
