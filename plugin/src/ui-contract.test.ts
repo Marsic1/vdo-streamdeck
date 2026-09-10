@@ -36,6 +36,10 @@ describe("property inspector contract", () => {
 		}
 	});
 
+	it("renders the select-guest title template as a multi-line field", () => {
+		expect(inspector).toMatch(/<textarea\b[^>]*\bid="selectTitle"/i);
+	});
+
 	it("renders settings for every manifest action", () => {
 		for (const action of manifest.Actions) {
 			expect(inspector).toContain(action.UUID);

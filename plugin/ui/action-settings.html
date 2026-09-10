@@ -653,8 +653,8 @@
     <input id="currentSelectedTarget" type="text" readonly>
 
     <label for="selectTitle">Title template</label>
-    <input id="selectTitle" type="text" placeholder="{slot} {label} {streamID} {state}">
-    <div class="hint">Guest Command and Guest Scene actions can use target mode <code>Selected guest</code>. Tokens: <code>{slot}</code> <code>{label}</code> <code>{streamID}</code> <code>{mode}</code> <code>{state}</code></div>
+    <textarea id="selectTitle" rows="2" spellcheck="false" placeholder="{slot} {label} {streamID} {state}"></textarea>
+    <div class="hint">Guest Command and Guest Scene actions can use target mode <code>Selected guest</code>. Tokens: <code>{slot}</code> <code>{label}</code> <code>{streamID}</code> <code>{mode}</code> <code>{state}</code> Newlines render as line breaks on the key.</div>
   </section>
 
   <section id="guestSceneSettings" class="hidden">
